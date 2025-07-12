@@ -1,0 +1,176 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+    <title>Infant Health Risk Prediction</title>
+</head>
+<body>
+    <h2>Enter Infant Health Info</h2>
+    <form action="/predict" method="post">
+        <label>Age (months):</label><input type="number" name="age_months" step="1"><br>
+        <label>Weight (kg):</label><input type="number" name="weight_kg" step="0.1"><br>
+        <label>Height (cm):</label><input type="number" name="height_cm" step="0.1"><br>
+        <label>Heart Rate:</label><input type="number" name="heart_rate"><br>
+        <label>Oxygen Level:</label><input type="number" name="oxygen_level" step="0.1"><br>
+        <label>Temperature (°C):</label><input type="number" name="temperature" step="0.1"><br>
+        <label>Feeding Frequency:</label><input type="number" name="feeding_frequency"><br>
+        <label>Sleep Hours:</label><input type="number" name="sleep_hours" step="0.1"><br>
+        <input type="submit" value="Predict">
+    </form>
+
+    {% if prediction %}
+        <h3>Predicted Risk: {{ prediction }}</h3>
+    {% endif %}
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infant Health Predictor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: auto;
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="number"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #predictionResult {
+            margin-top: 25px;
+            padding: 15px;
+            border: 1px solid #cce5ff;
+            background-color: #e0f7fa;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 1.1em;
+            color: #0056b3;
+            font-weight: bold;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👶 Infant Health Predictor 🩺</h1>
+        <form id="predictionForm">
+            <label for="age_months">Age (months):</label>
+            <input type="number" id="age_months" name="age_months" value="9" required min="6" max="12">
+
+            <label for="weight_kg">Weight (kg):</label>
+            <input type="number" id="weight_kg" name="weight_kg" step="0.1" value="7.5" required min="5.5" max="10">
+
+            <label for="height_cm">Height (cm):</label>
+            <input type="number" id="height_cm" name="height_cm" step="0.1" value="70" required min="60" max="80">
+
+            <label for="heart_rate">Heart Rate (bpm):</label>
+            <input type="number" id="heart_rate" name="heart_rate" value="120" required min="90" max="160">
+
+            <label for="oxygen_level">Oxygen Level (%):</label>
+            <input type="number" id="oxygen_level" name="oxygen_level" step="0.1" value="98" required min="85" max="100">
+
+            <label for="temperature">Temperature (°C):</label>
+            <input type="number" id="temperature" name="temperature" step="0.1" value="37.0" required min="36" max="39">
+
+            <label for="feeding_frequency">Feeding Frequency (per day):</label>
+            <input type="number" id="feeding_frequency" name="feeding_frequency" value="8" required min="5" max="12">
+
+            <label for="sleep_hours">Sleep Hours (per day):</label>
+            <input type="number" id="sleep_hours" name="sleep_hours" step="0.1" value="12" required min="10" max="15">
+
+            <button type="submit">Get Prediction</button>
+        </form>
+        <div id="predictionResult">
+            </div>
+        <div class="error-message" id="errorMessage"></div>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent default form submission
+
+            const formData = {
+                age_months: parseFloat(document.getElementById('age_months').value),
+                weight_kg: parseFloat(document.getElementById('weight_kg').value),
+                height_cm: parseFloat(document.getElementById('height_cm').value),
+                heart_rate: parseInt(document.getElementById('heart_rate').value),
+                oxygen_level: parseFloat(document.getElementById('oxygen_level').value),
+                temperature: parseFloat(document.getElementById('temperature').value),
+                feeding_frequency: parseInt(document.getElementById('feeding_frequency').value),
+                sleep_hours: parseFloat(document.getElementById('sleep_hours').value)
+            };
+
+            const errorMessageDiv = document.getElementById('errorMessage');
+            const predictionResultDiv = document.getElementById('predictionResult');
+            errorMessageDiv.textContent = ''; // Clear previous errors
+            predictionResultDiv.textContent = 'Predicting...'; // Show loading state
+
+            try {
+                // Ensure this URL matches your Flask app's address and port
+                const response = await fetch('http://127.0.0.1:5000/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                predictionResultDiv.textContent = `Predicted Infant Health Outcome: ${data["Predicted Outcome"]}`;
+            } catch (error) {
+                console.error('Error during prediction:', error);
+                errorMessageDiv.textContent = `Error: ${error.message}. Please check console for details.`;
+                predictionResultDiv.textContent = 'Prediction failed.';
+            }
+        });
+    </script>
+</body>7
+</html>
